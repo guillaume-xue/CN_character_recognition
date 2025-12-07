@@ -1,3 +1,6 @@
+import os
+import joblib
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
@@ -24,3 +27,27 @@ def train_reglog(X_train, y_train):
     model.fit(X_train, y_train)
     print("Logistic Regression model trained successfully.")
     return model
+
+def train_randforest(X_train, y_train):
+    print("Training Random Forest model...")
+    model = make_pipeline(
+        StandardScaler(),
+        RandomForestClassifier(n_estimators=100, random_state=42, verbose=2)
+    )
+    
+    model.fit(X_train, y_train)
+    print("Random Forest model trained successfully.")
+    return model
+
+def save_model(model, filename):
+    joblib.dump(model, filename)
+    print("Model saved to" + filename)
+
+def load_model(filename):
+    if os.path.exists(filename):
+        model = joblib.load(filename)
+        print("Model loaded from" + filename)
+        return model
+    else:
+        print("Model file " + filename + " not found")
+        return None
