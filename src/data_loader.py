@@ -49,10 +49,10 @@ def split_data_randomly(images, labels, seed=1234):
   random.shuffle(combined)
   images[:], labels[:] = zip(*combined)
 
-  train_images = images[:1000]
-  train_labels = labels[:1000]
-  test_images = images[1000:1250]
-  test_labels = labels[1000:1250]
+  train_images = images[:10000]
+  train_labels = labels[:10000]
+  test_images = images[10000:15000]
+  test_labels = labels[10000:15000]
 
   return train_images, train_labels, test_images, test_labels
 
