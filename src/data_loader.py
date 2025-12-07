@@ -7,6 +7,10 @@ import src.features as features
 
 DATA_DIR = "data/data"
 CSV_FILE = "data/chinese_mnist.csv"
+DATA_LOAD_PATH = "data/load_data/"
+HOG_IMAGES_FILE = DATA_LOAD_PATH + "hog_images.npy"
+HOG_LABELS_FILE = DATA_LOAD_PATH + "hog_labels.npy"
+HOG_DATA_FILE = DATA_LOAD_PATH + "hog_data.pkl"
 
 def readCSV():
   data = []
@@ -34,10 +38,10 @@ def load_data_with_hog():
 
   print(f"Loaded {len(images)} images.")
 
-  np.save('data/preload/hog_images.npy', np.array(images))
-  np.save('data/preload/hog_labels.npy', np.array(labels))
+  np.save(HOG_IMAGES_FILE, np.array(images))
+  np.save(HOG_LABELS_FILE, np.array(labels))
 
-  with open('data/preload/hog_data.pkl', 'wb') as f:
+  with open(HOG_DATA_FILE, 'wb') as f:
     pickle.dump((images, labels), f)
 
   return images, labels
@@ -49,16 +53,18 @@ def split_data_randomly(images, labels, seed=1234):
   random.shuffle(combined)
   images[:], labels[:] = zip(*combined)
 
-  train_images = images[:10000]
-  train_labels = labels[:10000]
-  test_images = images[10000:15000]
-  test_labels = labels[10000:15000]
+  split_index = int(0.8 * len(images))
+
+  train_images = images[:split_index]
+  train_labels = labels[:split_index]
+  test_images = images[split_index:]
+  test_labels = labels[split_index:]
 
   return train_images, train_labels, test_images, test_labels
 
 def loadImages():
   try:
-    with open('data/preload/hog_data.pkl', 'rb') as f:
+    with open(HOG_DATA_FILE, 'rb') as f:
       images, labels = pickle.load(f)
     print("Loaded data from pickle file.")
   except (FileNotFoundError, EOFError):
