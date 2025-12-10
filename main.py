@@ -8,12 +8,10 @@ RANDFOREST_MODEL_FILE = TRAIN_MODEL_DIR + 'randforest_model.pkl'
 
 if __name__ == "__main__":
     # Load data
-    X_train, y_train, X_test, y_test = data_loader.load_images('2')
+    X_train, y_train, X_test, y_test = data_loader.load_images('1')
 
     # Train the model
     svm_model, logreg_model, randforest_model = model.load_all_models(X_train, y_train)
 
     # Evaluate the models
-    model.evaluate_model(svm_model, X_test, y_test, "SVM")
-    model.evaluate_model(logreg_model, X_test, y_test, "Logistic Regression")
-    model.evaluate_model(randforest_model, X_test, y_test, "Random Forest")
+    model.evaluate_model(svm_model, logreg_model, randforest_model, X_test, y_test)

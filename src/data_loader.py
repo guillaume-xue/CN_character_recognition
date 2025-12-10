@@ -4,6 +4,7 @@ import random
 import cv2
 from pathlib import Path
 import numpy as np
+import os
 import src.features as features
 
 DATA_DIR_1 = "data/data"
@@ -59,6 +60,8 @@ def load_data_with_hog(dataset):
 
   print(f"Loaded {len(images)} images.")
 
+  os.makedirs(DATA_LOAD_PATH, exist_ok=True)
+
   np.save(HOG_IMAGES_FILE, np.array(images))
   np.save(HOG_LABELS_FILE, np.array(labels))
 
@@ -69,7 +72,7 @@ def load_data_with_hog(dataset):
 
 def split_data_randomly(images, labels, seed=1234):
   print("Splitting data into train and test sets...")
-  
+
   random.seed(seed)
 
   combined = list(zip(images, labels))
@@ -112,7 +115,7 @@ def create_csv_file():
 
 #------------------------------------------------------------------
 
-def load_images(dataset='2'):
+def load_images(dataset='1'):
   try:
     with open(HOG_DATA_FILE, 'rb') as f:
       images, labels = pickle.load(f)
