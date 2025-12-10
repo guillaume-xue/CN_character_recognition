@@ -1,5 +1,8 @@
+import cv2
+import matplotlib.pyplot as plt
 import src.data_loader as data_loader
 import src.model as model
+import src.features as features
 
 TRAIN_MODEL_DIR = 'data/train_model/'
 SVM_MODEL_FILE = TRAIN_MODEL_DIR + 'svm_model.pkl'

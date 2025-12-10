@@ -53,9 +53,8 @@ def load_data_with_hog(dataset):
     image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     if image is None:
       continue
-    image = cv2.resize(image, (64, 64))
-    hog_feat = features.extract_hog_features(image)
-    images.append(hog_feat)
+    feat = features.preprocess(image)
+    images.append(feat)
     labels.append(int(line[label_idx]))
 
   print(f"Loaded {len(images)} images.")
