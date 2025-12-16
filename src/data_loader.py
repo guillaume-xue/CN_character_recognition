@@ -74,9 +74,9 @@ def split_data_randomly(images, labels, seed=1234):
 
   random.seed(seed)
 
-  combined = list(zip(images, labels))
-  random.shuffle(combined)
-  images[:], labels[:] = zip(*combined)
+  comb = list(zip(images, labels))
+  random.shuffle(comb)
+  images[:], labels[:] = zip(*comb)
 
   split_index = int(0.8 * len(images))
 
@@ -120,7 +120,6 @@ def load_images(dataset='1'):
       images, labels = pickle.load(f)
     print("Loaded data from pickle file.")
   except (FileNotFoundError, EOFError):
-    print("Pickle file not found or empty, loading data afresh.")
     images, labels = load_data_with_hog(dataset)
 
   return split_data_randomly(images, labels)

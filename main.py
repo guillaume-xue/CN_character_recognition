@@ -11,10 +11,11 @@ RANDFOREST_MODEL_FILE = TRAIN_MODEL_DIR + 'randforest_model.pkl'
 
 if __name__ == "__main__":
     # Load data
-    X_train, y_train, X_test, y_test = data_loader.load_images('1')
+    X_train, y_train, X_test, y_test = data_loader.load_images()
 
     # Train the model
-    svm_model, logreg_model, randforest_model = model.load_all_models(X_train, y_train)
+    best_svm, best_params, results = model.find_best_svm_params(X_train, y_train, cv=5)
 
-    # Evaluate the models
-    model.evaluate_model(svm_model, logreg_model, randforest_model, X_test, y_test)
+    # Use the best model for predictions
+    predictions = best_svm.predict(X_test)
+    # features.display_features(type=1)

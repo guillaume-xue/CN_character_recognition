@@ -5,46 +5,46 @@ import matplotlib.pyplot as plt
 EXEMPLE_IMAGE_PATH_1 = 'data/data/input_69_4_15.jpg'
 EXEMPLE_IMAGE_PATH_2 = 'data/chinese-handwriting/CASIA-HWDB_Train/Train/这/1.png'
 
-
 def crop_image(image):
     coords = cv2.findNonZero(image) 
     if coords is None:
       return image 
     x, y, w, h = cv2.boundingRect(coords)
-    cropped = image[y:y+h, x:x+w]
-    return cropped
+    crop = image[y:y+h, x:x+w]
+    return crop
 
 def resize_image(image, target_size=(128, 128)):
-  resized = cv2.resize(image, target_size, interpolation=cv2.INTER_AREA)
-  return resized
+  resize = cv2.resize(image, target_size, interpolation=cv2.INTER_AREA)
+  return resize
 
 def binarize_otsu(image):
-  _, binary = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-  return binary
+  _, bina = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+  return bina
   
-def hog_features(image, visualize=False):
-  if visualize:
-    features, hog_image = hog(image, 
-                              orientations=12, 
-                              pixels_per_cell=(8, 8), 
-                              cells_per_block=(2, 2), 
-                              block_norm='L2-Hys', 
-                              visualize=True)
-    hog_image = hog_image.astype('uint8')
-    return features, hog_image
-  else:
-    features = hog(image, 
+def hog_features(image):
+  features = hog(image, 
+                  orientations=12, 
+                  pixels_per_cell=(8, 8), 
+                  cells_per_block=(2, 2), 
+                  block_norm='L2-Hys')
+  return features
+  
+def hog_image_only(image):
+  _, hog_image = hog(
+                    image, 
                     orientations=12, 
                     pixels_per_cell=(8, 8), 
                     cells_per_block=(2, 2), 
-                    block_norm='L2-Hys')
-    return features, None
+                    block_norm='L2-Hys', 
+                    visualize=True
+                      )
+  return hog_image
 
 def preprocess(image):
-    binarized = binarize_otsu(image)
-    crop = crop_image(binarized)
-    resized = resize_image(crop)
-    features, _ = hog_features(resized)
+    bina = binarize_otsu(image)
+    crop = crop_image(bina)
+    resize = resize_image(crop)
+    features = hog_features(resize)
     return features
 
 def display_features(type=1):
@@ -53,7 +53,7 @@ def display_features(type=1):
   binarized = binarize_otsu(image)
   crop = crop_image(binarized)
   resized = resize_image(crop, target_size=(128, 128))
-  _, hog_image = hog_features(resized, visualize=True)
+  hog_image = hog_image_only(resized)
 
   _, axes = plt.subplots(1, 5, figsize=(18, 3))
   

@@ -1,7 +1,9 @@
 import os
 import joblib
+import time
+from datetime import timedelta
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import cross_val_score, GridSearchCV
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
@@ -18,21 +20,62 @@ def train_svm(X_train, y_train):
     print("Training SVM model...")
     model = make_pipeline(
         StandardScaler(),
-        SVC(C=10.0)
+        SVC()
     )
     
     model.fit(X_train, y_train)
     print("SVM model trained successfully.")
     return model
 
+def find_best_svm_params(X_train, y_train, cv=5, n_jobs=-1, verbose=2):
+    pipeline = make_pipeline(
+        StandardScaler(),
+        SVC()
+    )
+
+    param_grid = {
+        'svc__C': [0.1, 1.0, 10.0, 100.0],
+        'svc__kernel': ['rbf', 'linear', 'poly'],
+        'svc__gamma': ['scale', 'auto']
+    }
+    
+    grid_search = GridSearchCV(
+        pipeline,
+        param_grid,
+        cv=cv,
+        scoring='accuracy',
+        n_jobs=n_jobs,
+        verbose=verbose,
+        return_train_score=True
+    )
+
+    start_time = time.time()
+    grid_search.fit(X_train, y_train)
+    end_time = time.time()
+    
+    actual_time = end_time - start_time
+
+    best_params = grid_search.best_params_
+    best_score = grid_search.best_score_
+
+    print(f"Grid search completed in {timedelta(seconds=int(actual_time))}")
+    print(f"Best parameters: {best_params}")
+    print(f"Best cross-validation accuracy: {best_score:.4f}")
+    return grid_search.cv_results_
+
+def print_results(cv_results):
+    means = cv_results['mean_test_score']
+    stds = cv_results['std_test_score']
+    params = cv_results['params']
+    
+    for mean, std, param in zip(means, stds, params):
+        print(f"Mean accuracy: {mean:.4f} (Std: {std:.4f}) with parameters: {param}")
+
 def train_reglog(X_train, y_train):
     print("Training Logistic Regression model...")
     model = make_pipeline(
         StandardScaler(),
-        LogisticRegression(
-            C=1.0,
-            n_jobs=-1
-        )
+        LogisticRegression()
     )
     
     model.fit(X_train, y_train)
@@ -43,10 +86,7 @@ def train_randforest(X_train, y_train):
     print("Training Random Forest model...")
     model = make_pipeline(
         StandardScaler(),
-        RandomForestClassifier(
-            n_estimators=100,
-            n_jobs=-1
-        )
+        RandomForestClassifier()
     )
     
     model.fit(X_train, y_train)
@@ -66,7 +106,8 @@ def load_model(filename):
         print("Model file " + filename + " not found")
         return None
     
-def load_all_models(X_train, y_train, svm_model=True, logreg_model=True, randforest_model=True):
+def load_all_models(X_train, y_train, svm_model=True, logreg_model=True, 
+    randforest_model=True):
     os.makedirs(TRAIN_MODEL_DIR, exist_ok=True)
 
     if svm_model is True:
@@ -89,34 +130,51 @@ def load_all_models(X_train, y_train, svm_model=True, logreg_model=True, randfor
     
     return svm_model, logreg_model, randforest_model
 
+def evaluate_one_model(model, X_test, y_test, model_name="Model"):
+    print(f"Calculating {model_name} accuracy...")
+    predictions = []
+    for i in tqdm(range(len(X_test)), desc=f"{model_name} Predictions"):
+        predictions.append(model.predict([X_test[i]])[0])
+    predictions = np.array(predictions)
+    accuracy = sum(predictions == y_test) / len(y_test)
+    return accuracy
+
 def evaluate_model(svm_model, logreg_model, randforest_model, X_test, y_test, evaluate_svm=True, evaluate_logreg=True, evaluate_randforest=True):
-    if evaluate_svm is True:
-        print("Calculating SVM accuracy...")
-        predictions = []
-        for i in tqdm(range(len(X_test)), desc="SVM Predictions"):
-            predictions.append(svm_model.predict([X_test[i]])[0])
-        predictions = np.array(predictions)
-        svm_accuracy = sum(predictions == y_test) / len(y_test)
+    accuracies = {}
     
+    if evaluate_svm is True:
+        svm_accuracy = evaluate_one_model(svm_model, X_test, y_test, model_name="SVM")
     if evaluate_logreg is True:
-        print("Calculating Logistic Regression accuracy...")
-        predictions = []
-        for i in tqdm(range(len(X_test)), desc="Logistic Regression Predictions"):
-            predictions.append(logreg_model.predict([X_test[i]])[0])
-        predictions = np.array(predictions)
-        logreg_accuracy = sum(predictions == y_test) / len(y_test)
-
+        logreg_accuracy = evaluate_one_model(logreg_model, X_test, y_test, model_name="Logistic Regression")
     if evaluate_randforest is True:
-        print("Calculating Random Forest accuracy...")
-        predictions = []
-        for i in tqdm(range(len(X_test)), desc="Random Forest Predictions"):
-            predictions.append(randforest_model.predict([X_test[i]])[0])
-        predictions = np.array(predictions)
-        randforest_accuracy = sum(predictions == y_test) / len(y_test)
+        randforest_accuracy = evaluate_one_model(randforest_model, X_test, y_test, model_name="Random Forest")
 
     if evaluate_svm is True:
-        print(f"SVM Accuracy: {svm_accuracy}")
+        print(f"SVM Accuracy: {svm_accuracy:.4f}")
     if evaluate_logreg is True:
-        print(f"Logistic Regression Accuracy: {logreg_accuracy}")
+        print(f"Logistic Regression Accuracy: {logreg_accuracy:.4f}")
     if evaluate_randforest is True:
-        print(f"Random Forest Accuracy: {randforest_accuracy}")
+        print(f"Random Forest Accuracy: {randforest_accuracy:.4f}")
+    
+    return accuracies
+
+def evaluate_one_model_with_cv(model, X_train, y_train, X_test, y_test, model_name="Model", cv=5):
+    print(f"\nÉvaluation {model_name} avec {cv}-fold cross-validation...")
+    cv_scores = cross_val_score(model, X_train, y_train, cv=cv, 
+                                scoring='accuracy', n_jobs=-1)
+    print(f"{model_name} CV Accuracy: {cv_scores.mean():.4f} (+/- {cv_scores.std():.4f})")
+
+def evaluate_model_with_cv(svm_model, logreg_model, randforest_model, X_train, y_train, X_test, y_test, 
+                           evaluate_svm=True, evaluate_logreg=True, evaluate_randforest=True, cv=5):
+    print("Start cross evaluation ")
+    
+    if evaluate_svm and svm_model is not None:
+        evaluate_one_model_with_cv(svm_model, X_train, y_train, X_test, y_test, model_name="SVM", cv=cv)
+    
+    if evaluate_logreg and logreg_model is not None:
+        evaluate_one_model_with_cv(logreg_model, X_train, y_train, X_test, y_test, model_name="Logistic Regression", cv=cv)
+    
+    if evaluate_randforest and randforest_model is not None:
+        evaluate_one_model_with_cv(randforest_model, X_train, y_train, X_test, y_test, model_name="Random Forest", cv=cv)
+
+    print("End of cross validation evaluation.")
