@@ -13,9 +13,6 @@ if __name__ == "__main__":
     # Load data
     X_train, y_train, X_test, y_test = data_loader.load_images()
 
-    # Train the model
-    best_svm, best_params, results = model.find_best_svm_params(X_train, y_train, cv=5)
+    svm, rand, reg = model.load_all_models(X_train, y_train)
 
-    # Use the best model for predictions
-    predictions = best_svm.predict(X_test)
-    # features.display_features(type=1)
+    acc = model.evaluate_model(svm, reg, rand, X_test, y_test)
